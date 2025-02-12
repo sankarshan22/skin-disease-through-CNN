@@ -1,0 +1,163 @@
+# Base Layer class
+class Layer:
+    def __init__(self): 
+        self.input = None
+        self.output = None
+
+    def forward(self, input):
+        pass
+
+    def backward(self, output_gradient, learning_rate):
+        pass
+
+# Dense layer class
+class Dense(Layer):
+    def __init__(self, input_size, output_size):  
+        self.weights = np.random.randn(output_size, input_size) * 0.01
+        self.bias = np.zeros((output_size, 1))
+
+    def forward(self, input):
+        self.input = input
+        return np.dot(self.weights, self.input) + self.bias
+
+    def backward(self, output_gradient, learning_rate):
+        weights_gradient = np.dot(output_gradient, self.input.T)
+        input_gradient = np.dot(self.weights.T, output_gradient)
+        self.weights -= learning_rate * weights_gradient
+        self.bias -= learning_rate * np.sum(output_gradient, axis=1, keepdims=True)
+        return input_gradient
+
+# Activation layer class
+class Activation(Layer):
+    def __init__(self, activation, activation_derivative):  # Fixed
+        super().__init__()
+        self.activation = activation
+        self.activation_derivative = activation_derivative
+
+    def forward(self, input):
+        self.input = input
+        return self.activation(self.input)
+
+    def backward(self, output_gradient, learning_rate):
+        return output_gradient * self.activation_derivative(self.input)
+
+# Sigmoid activation function
+class Sigmoid(Activation):
+    def __init__(self):  # Fixed
+        def sigmoid(x):
+            return 1 / (1 + np.exp(-x))
+
+        def sigmoid_derivative(x):
+            s = sigmoid(x)
+            return s * (1 - s)
+
+        super().__init__(sigmoid, sigmoid_derivative)
+#Relu activation function
+class ReLU(Activation):
+    def __init__(self):
+        def relu(x):
+            return np.maximum(0, x)
+
+        def relu_derivative(x):
+            return np.where(x > 0, 1, 0)
+
+        super().__init__(relu, relu_derivative)
+#Tanh activation function        
+class Tanh(Activation):
+    def __init__(self):
+        def tanh(x):
+            return np.tanh(x)
+
+        def tanh_derivative(x):
+            return 1 - np.tanh(x)**2
+
+        super().__init__(tanh, tanh_derivative)
+
+# Softmax activation function
+class Softmax(Layer):
+    def forward(self, input):
+        exp_values = np.exp(input - np.max(input, axis=0, keepdims=True))
+        self.output = exp_values / np.sum(exp_values, axis=0, keepdims=True)
+        return self.output
+
+    def backward(self, output_gradient, learning_rate):
+        return output_gradient  # Combined with loss derivative in cross-entropy
+
+# Loss functions
+def categorical_cross_entropy(y_true, y_pred):
+    return -np.sum(y_true * np.log(y_pred + 1e-12)) / y_true.shape[1]
+
+def categorical_cross_entropy_derivative(y_true, y_pred):
+    return (y_pred - y_true) / y_true.shape[1]
+
+# Training function
+def train(network, loss, loss_derivative, x_train, y_train, epochs=5, learning_rate=0.01):
+    for epoch in range(epochs):
+        error = 0
+        correct = 0
+        for x, y in zip(x_train, y_train):
+            x = x.reshape(-1, 1)  # Flatten input
+            y = y.reshape(-1, 1)
+            
+            # Forward pass
+            output = predict(network, x)
+            
+            # Compute loss
+            error += loss(y, output)
+            
+            # Backward pass
+            grad = loss_derivative(y, output)
+            for layer in reversed(network):
+                grad = layer.backward(grad, learning_rate)
+            
+            # Accuracy calculation
+            correct += (np.argmax(y) == np.argmax(output))
+        
+        error /= len(x_train)
+        accuracy = correct / len(x_train)
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {error:.4f}, Accuracy: {accuracy:.4f}")
+
+# Predict function
+def predict(network, x):
+    for layer in network:
+        x = layer.forward(x)
+    return x
+
+# Example preprocessing function (you need to replace this)
+def preprocess_image(image_path):
+    from PIL import Image
+    img = Image.open(image_path).convert("L")  # Convert to grayscale
+    img = img.resize((20, 20))  # Resize to 20x20
+    return np.asarray(img).flatten() / 255.0  # Normalize
+
+# Example dataset
+base_path = "C:\\Users\\sanka\\OneDrive\\Desktop\\project\\resized_images"
+image_paths = [
+    os.path.join(base_path, "BA- cellulitis (2).png")
+]
+
+X_train = np.array([preprocess_image(img) for img in image_paths])
+y_train = np.array([
+    [1, 0, 0],  # Class 1
+    [0, 1, 0],  # Class 2
+    [0, 0, 1]   # Class 3
+])
+
+# Define network
+network = [
+    Dense(20 * 20, 64),
+    Softmax(),
+    Dense(64, 32),
+    Softmax(),
+    Dense(32, 3),
+    Softmax()
+]
+
+# Train network
+train(network, categorical_cross_entropy, categorical_cross_entropy_derivative, X_train, y_train, epochs=10, learning_rate=0.01)
+
+# Predict example
+output = predict(network, X_train[0].reshape(-1, 1))
+print("Predicted Output:", output)
+predicted_class = np.argmax(output)
+print(f"Predicted Class: {predicted_class}")
