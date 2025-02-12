@@ -1,0 +1,44 @@
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+from PIL import Image
+from io import BytesIO
+import numpy as np
+import model  # Import the backend code module
+
+# Initialize Flask app
+app = Flask(_name_)
+CORS(app)  # Enable Cross-Origin Resource Sharing (CORS)
+
+# Endpoint for predictions
+@app.route('/predict', methods=['POST'])
+def predict():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    try:
+        # Open the image using PIL
+        image = Image.open(BytesIO(file.read()))
+
+        # Resize and preprocess the image to match your model's input requirements
+        image = image.resize((64, 64)).convert('RGB')  # Match the input size used in training
+        image_array = np.array(image).astype('float32') / 255.0  # Normalize the image
+        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
+
+        # Call the backend model's predict function directly with the image array
+        predicted_class = model.predict_from_array(image_array)
+
+        return jsonify({'prediction': predicted_class}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/index', methods=['GET'])
+def webPage():
+    return render_template("index.html")
+
+# Run the app
+if _name_ == '_main_':
+    app.run(debug=True, port=5000)
