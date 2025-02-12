@@ -1,0 +1,525 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Disease Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        input[type="file"] {
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Skin Disease Classifier</h1>
+    <p>Upload an image of the skin lesion to classify it.</p>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="image" name="file" accept="image/*" required>
+        <br><br>
+        <button type="submit">Upload and Predict</button>
+    </form>
+    
+    <div class="result" id="result"></div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Clear any previous result
+            resultDiv.innerHTML = '';
+
+            // Get the file from the form
+            const formData = new FormData(form);
+
+            try {
+                // Send the form data to the backend for processing
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <span class="error">Error: ${result.error}</span>;
+                } else {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <strong>Prediction:</strong> ${result.prediction};
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<span class="error">Error uploading the image!</span>';
+            }
+        });
+    </script>
+
+</body>
+</html> -->
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Disease Classifier</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #f7f7f7, #d7e9f7);
+            color: #333;
+            text-align: center;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* File input and button styles */
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 30px;
+            font-size: 1rem;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .file-label:hover {
+            background: #4CAF50;
+            color: white;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        .result strong {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #d9534f;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Skin Disease Classifier</h1>
+        <p>Upload an image of a skin lesion to classify its condition.</p>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="image" class="file-label">Choose Image</label>
+            <input type="file" id="image" name="file" accept="image/*" required>
+            <button type="submit">Upload and Predict</button>
+        </form>
+
+        <div class="preview" id="preview">
+            <p>No image selected</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <footer>
+        <p>Powered by <a href="https://tensorflow.org/" target="_blank">TensorFlow</a> & <a href="https://flask.palletsprojects.com/" target="_blank">Flask</a>.</p>
+    </footer>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const imageInput = document.getElementById('image');
+        const previewDiv = document.getElementById('preview');
+        const resultDiv = document.getElementById('result');
+
+        // Preview the selected image
+        imageInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    previewDiv.innerHTML = <img src="${event.target.result}" alt="Selected Image">;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.innerHTML = <p>No image selected</p>;
+            }
+        });
+
+        // Submit the form and handle predictions
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Clear previous result
+            resultDiv.innerHTML = '';
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <span class="error">Error: ${result.error}</span>;
+                } else {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <strong>Prediction:</strong> ${result.prediction};
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<span class="error">Error uploading the image!</span>';
+            }
+        });
+    </script>
+
+</body>
+</html>
+ -->
+
+
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Disease Classifier</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #f0f8ff, #add8e6);
+            color: #333;
+            text-align: center;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: #4CAF50;
+            margin-bottom: 10px;
+            animation: slideIn 1s ease-out;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* File input and button styles */
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 30px;
+            font-size: 1rem;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .file-label:hover {
+            background: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: zoomIn 1s ease-out;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #444;
+            opacity: 0;
+            animation: fadeIn 1.5s forwards;
+        }
+
+        .result strong {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #d9534f;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Skin Disease Classifier</h1>
+        <p>Upload an image of a skin lesion to classify its condition.</p>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="image" class="file-label">Choose Image</label>
+            <input type="file" id="image" name="file" accept="image/*" required>
+            <button type="submit">Upload and Predict</button>
+        </form>
+
+        <div class="preview" id="preview">
+            <p>No image selected</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <footer>
+        <p>Powered by <a href="https://tensorflow.org/" target="_blank">TensorFlow</a> & <a href="https://flask.palletsprojects.com/" target="_blank">Flask</a>.</p>
+    </footer>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const imageInput = document.getElementById('image');
+        const previewDiv = document.getElementById('preview');
+        const resultDiv = document.getElementById('result');
+
+        // Preview the selected image
+        imageInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    previewDiv.innerHTML = <img src="${event.target.result}" alt="Selected Image">;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.innerHTML = <p>No image selected</p>;
+            }
+        });
+
+        // Submit the form and handle predictions
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Clear previous result
+            resultDiv.innerHTML = '';
+            resultDiv.style.opacity = 0;
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <span class="error">Error: ${result.error}</span>;
+                } else {
+                    const result = await response.json();
+                    resultDiv.innerHTML = <strong>Prediction:</strong> ${result.prediction};
+                }
+                resultDiv.style.opacity = 1;
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<span class="error">Error uploading the image!</span>';
+                resultDiv.style.opacity = 1;
+            }
+        });
+    </script>
+
+</body>
+</html>
